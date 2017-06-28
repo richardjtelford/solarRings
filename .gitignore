@@ -1,33 +1,23 @@
-# History files
-.Rhistory
-.Rapp.history
+##forbid
+#everything
+/*
+/*/
 
-# Session Data files
-.RData
 
-# Example code in package build process
-*-Ex.R
+##allow
+#Rproj
+!*.Rproj
 
-# Output files from R CMD build
-/*.tar.gz
+# R scripts
+!*.R
+!*.r
 
-# Output files from R CMD check
-/*.Rcheck/
+#Rmarkdown
+!*.Rmd
 
-# RStudio files
-.Rproj.user/
+#datafiles
+!/data/
+/data/*
+!/data/SN_y_tot_V2.0.txt
+!/data/NorthernHemisphereRW.mat
 
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
-
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
-
-# knitr and R markdown default cache directories
-/*_cache/
-/cache/
-
-# Temporary files created by R markdown
-*.utf8.md
-*.knit.md
