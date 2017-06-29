@@ -4,6 +4,8 @@ library("R.matlab")
 library("zoo")
 library("tidyverse")
 library("assertthat")
+library("ggfortify")
+library("nlme")
 
 ##read data
 
@@ -19,13 +21,13 @@ library("assertthat")
 # Column 4: Number of observations used to compute the yearly mean total sunspot number.
 # Column 5: Definitive/provisional marker. A blank indicates that the value is definitive. A '*' symbol indicates that the yearly average still contains provisional daily values and is subject to a possible revision.
 
-ss <- read.table("SN_y_tot_V2.0.txt", header = FALSE)
+ss <- read.table("data/SN_y_tot_V2.0.txt", header = FALSE)
 names(ss) <- c("year", "sunspots", "sunspotSD", "nobs")
 ss <- ss %>% filter(between(year, 1750, 1951))
 
 
 #ring widths
-rw <- readMat("NorthernHemisphereRW.mat")
+rw <- readMat("data/NorthernHemisphereRW.mat")
 
 #reformat rw
 rwl<-lapply(1:length(rw[[1]][1,1,1]$meta.data[1,1,1]$site.name), function(i){
@@ -36,7 +38,7 @@ rwl<-lapply(1:length(rw[[1]][1,1,1]$meta.data[1,1,1]$site.name), function(i){
        out$lat <- rw[[1]][1, 1, 1]$meta.data[4, 1, 1]$lat[i, 1]
        out$long <- rw[[1]][1, 1, 1]$meta.data[5, 1, 1]$lon[i, 1]
        out$elev <- rw[[1]][1, 1, 1]$meta.data[6, 1, 1]$elev[i, 1]
-       tim <- rw[[1]][2, 1, 1]$time[, 1]
+       tim <- rw[[1]][2, 1, 1]$time[, 1]#oldest first
        crns <- rw[[1]][3, 1, 1]$crns[, i]
        out$crns <- crns[tim > 1749 & tim < 1951]
        out
@@ -114,25 +116,6 @@ cowplot::plot_grid(
 )
 
 
-
-# x11(height=9, point=16*3/2)
-# par(mfrow=c(3,1), mar=c(0,0,0,0), oma=c(2.7,2.7,1,2.7), mgp=c(1.2,.1,0), tcl=0.2)
-# with(ssf,matplot(freq[-(1:trim)],cbind(background, powq, spec)[-(1:trim),], col=c(1,2,4), type="l", lty=c(2,3,1), log="", bty="n", xaxt="n", lwd=2))
-# legend("topright", legend=c("Spectral power", "Median smoother", "90% significance level"), lty=c(1,2,3), col=c(4,1,2), cex=.8, bty="n", lwd=2)
-# title(main="a)", line=-1, adj=0.05)
-# with(n,matplot(freq[-(1:trim)],cbind(background, powq, spec)[-(1:trim),], col=c(1,2,4), type="l", lty=c(2,3,1), log="", bty="n", xaxt="n", yaxt="n",lwd=2))
-# title(main="b)", line=-1, adj=0.05)
-# axis(4, at=seq(0,.3,.1))
-# plot(n$freq[-(1:trim)], rowMeans(sig.9)[-(1:trim)]*100, type="l", bty="u", ylim=c(0,21),lwd=2, yaxt="n", col=4)
-# axis(2, at=seq(0,30,10))
-# title(main="c)", line=-1, adj=0.05)
-# abline(h=10, col=1, lty=3,lwd=2)
-# box("inner")
-# title(xlab=expression("Frequency years"^"-1"), outer=TRUE)
-# title(ylab="Percent records significant", adj=0.0, outer=TRUE)
-# title(ylab="Spectral power", adj=0.9, outer=TRUE)
-# mtext(side=4, text="Spectral power", outer=TRUE, line=1.2, cex=.66)
-
 #map significant
 mx <- which.max(ssf$spec)
 1/ssf$freq[mx]
@@ -198,8 +181,44 @@ cor.mat <- sapply(rwl, function(x)x$crns) %>% cor() %>% as.dist() %>% hist()
 
 
 #time domain
-#correlations with lags
+#correlations with lags 
 
-cor.9 <- sapply(rwl, function(x) {
-  cor(x$crns, ss)
+cor.9 <- map_df(rwl, function(x) {
+  correlation <- cor.test(x$crns, ss$sunspots)[c("estimate", "p.value")]
+  autocorrelation <- ar(x$crns, order.max = 1, aic = FALSE)
+  c(correlation, autocorrelation = autocorrelation$ar)
 })
+cor.9 <- cor.9 %>% mutate(sig = p.value < 0.1)
+mean(cor.9$sig)
+
+ggplot(cor.9, aes(x = estimate, fill = sig)) + geom_histogram()
+nbins <- 30
+ggplot(cor.9, aes(x = p.value)) + geom_histogram(breaks = seq(0, 1, length = nbins)) + geom_hline(yintercept = length(rwl)/nbins)
+
+#but data are autocorrelted
+autoplot(acf(rwl[[1]]$crns, plot = FALSE))
+ggplot(cor.9, aes(x = autocorrelation)) + geom_histogram()
+
+####check residuals are autocorrelated
+
+#know direction of supposed causality can use regression
+########Check direction of time is same!
+gls_res <- map_df(rwl, function(x) {
+  dat <- data_frame(rw = x$crns, s = ss$sunspots)
+  mod <- gls(rw ~ s, dat = dat, correlation = corAR1())
+  list(coef = coef(mod)[2], p.value = anova(mod)$`p-value`[2])
+  
+})
+gls_res <- gls_res %>% mutate(sig = p.value < 0.1)
+mean(gls_res$sig)
+gls_res %>% ggplot(aes(x = p.value)) + 
+  geom_histogram(breaks = seq(0, 1, length = nbins)) + 
+  geom_hline(yintercept = length(rwl)/nbins)
+
+
+
+
+
+
+
+
