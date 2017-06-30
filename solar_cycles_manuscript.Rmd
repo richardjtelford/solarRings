@@ -1,0 +1,78 @@
+---
+title: "solar cycle paper"
+author: "Richard J. Telford"
+date: "June 30, 2017"
+output: html_document
+bibliography: solarCycles.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, cache.lazy=TRUE)
+knitr::read_chunk("ringwidths.r")
+```
+
+```{r loadPackages, cache=FALSE, message=FALSE}
+```
+```{r importData, fig.show='hide'}
+```
+
+## Abstract
+
+
+**Keywords:** cyclicity, Schwabe cycle, solar cycle, tree-rings
+
+## Introduction
+
+Variability in solar output. TSI + enhanced variability in UV 
+Instrumental evidence of effect of solar variability- regional or hemispheric
+single stations??
+
+Proxy data inevitably noisy. Long history of attempts to detect solar variabilty on proxy data. Focus on 11-year Schwabe cycle. Examples: tree rings (south american, Permian etc), varves (xxx). ice out dates
+
+Problems: publication bias, autocorration, spectral analysis  - assumption of white noise background, or AR1 process etc - broad definitions - multiple testing.
+
+Solution: systematic analysis of tree ring data for evidence of solar signals in time and frequency domain.
+
+## Methods
+
+selection of ring-width series. From St George et al. synthesis of N hemisphere records. Signal strength, Span period `r time_limits$min`--`r time_limits$max`. Former cutoff - more reliable sunspot data, latter cutoff, prevent dropout of series, avoid period with greatest human influence on climate and CO2 concentrations (N-loading).
+Species
+
+We use yearly sunspot data from [#cite] as this is the longest annual-resolution proxy of solar activity.
+
+Spectral analysis
+
+The spectra are summarised by finding the proportion that are statistically significanct  (p > 0.1) for each frequency. If the trees are sensitive to solar variability, there should be an excess of spectra with a significant cyclicity corresponding to the Scwabe cycle. 
+
+Regression analyses
+
+Sensitivity tests
+
+`r gsub("(\\1) \\(.*", "\\1", R.version$version.string)` [@RCoreTeam] was used for all analyses.  
+
+
+## Results
+
+`r gsub("([[:alpha:]])(.+)", "\\U\\1\\L\\2", english::as.english(length(rwl)), perl = TRUE)` ringwidth series met the inclusion criteria (Fig 1). 
+
+```{r map1, fig.height = 3, fig.cap="Figure 1. Location of ringwidth series that met the inclusion criteria."}
+```
+
+```{r frequency, fig.show = "hide", results = "hide"}
+```
+
+Over the time period studied the sunspots record has a strong spectral peak at 1/`r 
+round(1/ssf$freq[which.max(ssf$spec)], 2)` years^-1^ (Fig. 2a). Some of the ringwidth series have a spectral peak at this frequency (Fig. 2b), but the less than 10% of the series have a spectral peak coincident with the Schwabe cycle (Fig. 2c). These series are geographically and taxonomically widespread.
+
+```{r fig2, fig.keep = "last", fig.cap = "Figure 2. a) Sunspot spectrum, b) spectrum of example ringwidth series, c) percent of ringwidth series with significant periodicity (p < 0.1) at each frequency. Dashed line at 10% indicates the expected percentage."}
+```
+
+
+
+## Discussion
+
+Hale cycle
+
+## Conclusions
+
+## References
