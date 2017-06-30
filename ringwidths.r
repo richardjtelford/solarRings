@@ -6,6 +6,7 @@ library("tidyverse")
 library("assertthat")
 library("ggfortify")
 library("nlme")
+library("lmtest")
 
 ##read data
 
@@ -181,12 +182,11 @@ cor.mat <- sapply(rwl, function(x)x$crns) %>% cor() %>% as.dist() %>% hist()
 
 
 #time domain
-#correlations with lags 
+#correlations #with lags 
 
 cor.9 <- map_df(rwl, function(x) {
   correlation <- cor.test(x$crns, ss$sunspots)[c("estimate", "p.value")]
-  autocorrelation <- ar(x$crns, order.max = 1, aic = FALSE)
-  c(correlation, autocorrelation = autocorrelation$ar)
+  correlation
 })
 cor.9 <- cor.9 %>% mutate(sig = p.value < 0.1)
 mean(cor.9$sig)
@@ -195,14 +195,42 @@ ggplot(cor.9, aes(x = estimate, fill = sig)) + geom_histogram()
 nbins <- 30
 ggplot(cor.9, aes(x = p.value)) + geom_histogram(breaks = seq(0, 1, length = nbins)) + geom_hline(yintercept = length(rwl)/nbins)
 
-#but data are autocorrelted
-autoplot(acf(rwl[[1]]$crns, plot = FALSE))
-ggplot(cor.9, aes(x = autocorrelation)) + geom_histogram()
+#regression - makes more sense than correlation as we know the direction of causality
+reg_res <- map_df(rwl, function(x){
+  dat <- data_frame(rw = x$crns, s = ss$sunspots)
+  lm_mod <- lm(rw ~ s, data = dat)
+  dw_res <- dwtest(lm_mod)
+  list(coef = coef(lm_mod)[2], lm_pvalue = anova(lm_mod)$`Pr(>F)`[1], dw_stat = dw_res$statistic, dw_pvalue = dw_res$p.value)
+})
 
-####check residuals are autocorrelated
+ggplot(reg_res, aes(x = coef, fill = lm_pvalue < 0.05)) + 
+  geom_histogram()
+
+
+ggplot(reg_res, aes(x = lm_pvalue)) + 
+  geom_histogram(breaks = seq(0, 1, length = nbins)) + 
+  geom_hline(yintercept = length(rwl)/nbins)
+
+
+
+#but data are autocorrelted
+ggplot(reg_res, aes(x = dw_stat, fill = dw_pvalue < 0.05)) + 
+  geom_histogram()
+
+#acf/pacf for ring
+plot_p_acf <- function(i, s = ss$sunspots){
+  mod <- lm(rwl[[i]]$crns ~ s)
+  resids <- resid(mod)
+  ACF <- autoplot(acf(resids, plot = FALSE))
+  PACF <- autoplot(pacf(resids, plot = FALSE))
+  gridExtra::grid.arrange(ACF, PACF)
+}
+plot_p_acf(1)
+plot_p_acf(400)
+
 
 #know direction of supposed causality can use regression
-########Check direction of time is same!
+
 gls_res <- map_df(rwl, function(x) {
   dat <- data_frame(rw = x$crns, s = ss$sunspots)
   mod <- gls(rw ~ s, dat = dat, correlation = corAR1())

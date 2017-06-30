@@ -31,6 +31,7 @@ CRAN_needed <- read.table(header = TRUE, stringsAsFactors = FALSE, text =
   cowplot
   rmarkdown
   zoo
+  lmtest
   ")$package
 
 #check against currently installed packages
