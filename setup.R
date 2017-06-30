@@ -32,6 +32,8 @@ CRAN_needed <- read.table(header = TRUE, stringsAsFactors = FALSE, text =
   rmarkdown
   zoo
   lmtest
+  english
+  knitr
   ")$package
 
 #check against currently installed packages
