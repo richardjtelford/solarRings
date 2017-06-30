@@ -15,6 +15,9 @@
 #Rmarkdown
 !*.Rmd
 
+#bibliography
+!*.bib
+
 #datafiles
 !/data/
 /data/*
