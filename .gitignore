@@ -18,9 +18,14 @@
 #bibliography
 !*.bib
 
+#synthesis
+!solarPapers.csv
+
+
 #datafiles
 !/data/
 /data/*
 !/data/SN_y_tot_V2.0.txt
 !/data/NorthernHemisphereRW.mat
 
+.Rproj.user
